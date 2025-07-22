@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer } from "react";
+import { useEffect, useReducer } from "react";
 import "./App.css";
 import Navbar from "./components/navbar";
 import Card from "./components/card";
@@ -17,23 +17,27 @@ interface State {
   isCollapsed: boolean;
 }
 
-interface Action {
-  type: "setItem";
-  payload: {
-    path: string;
-  };
-}
+type Action =
+  | {
+      type: "setItem";
+      payload: {
+        path: string;
+      };
+    }
+  | {
+      type: "setInputs";
+      payload: {
+        value: React.ChangeEvent<HTMLInputElement>;
+      };
+    }
+  | {
+      type: "collapse";
+      payload: {
+        bool: boolean;
+      };
+    };
 
-const photos = [
-  "https://picsum.photos/id/1001/200/200",
-  "https://picsum.photos/id/1002/200/200",
-  "https://picsum.photos/id/1003/200/200",
-  "https://picsum.photos/id/1004/200/200",
-  "https://picsum.photos/id/1005/200/200",
-  "https://picsum.photos/id/1006/200/200",
-  "https://picsum.photos/id/1008/200/200",
-  "https://picsum.photos/id/1009/200/200",
-];
+const photos: string[] = [];
 
 const initialState: State = {
   items: photos,
@@ -46,6 +50,21 @@ const initialState: State = {
   isCollapsed: false,
 };
 
+const handleOnChange = (
+  state: State,
+  e: React.ChangeEvent<HTMLInputElement>
+) => {
+  if (e.target.name === "file" && e.target.files && e.target.files[0]) {
+    return {
+      ...state.inputs,
+      file: e.target.files[0],
+      path: URL.createObjectURL(e.target.files[0]),
+    };
+  } else {
+    return { ...state.inputs, title: e.target.value };
+  }
+};
+
 function reducer(state: State, action: Action) {
   switch (action.type) {
     case "setItem":
@@ -53,49 +72,37 @@ function reducer(state: State, action: Action) {
         ...state,
         items: [action.payload.path, ...state.items],
       };
+    case "setInputs":
+      return {
+        ...state,
+        inputs: handleOnChange(state, action.payload.value),
+      };
+    case "collapse":
+      return {
+        ...state,
+        isCollapsed: action.payload.bool,
+      };
     default:
       return state;
   }
 }
 
 function App() {
-  const [inputs, setInputs] = useState<{
-    title: string | null;
-    file: File | null;
-    path: string | null;
-  }>({
-    title: null,
-    file: null,
-    path: null,
-  });
   const [state, dispatch] = useReducer(reducer, initialState);
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  // const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.name === "file" && e.target.files && e.target.files[0]) {
-      setInputs({
-        title: e.target.name,
-        file: e.target.files[0],
-        path: URL.createObjectURL(e.target.files[0]),
-      });
-    }
-  };
+  const toggleCollapse = (bool: boolean) =>
+    dispatch({ type: "collapse", payload: { bool } });
+  const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) =>
+    dispatch({ type: "setInputs", payload: { value: e } });
 
   const handleOnSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (inputs.path) {
-      // setItems([inputs.path, ...items]);
-      dispatch({ type: "setItem", payload: { path: inputs.path } });
-      setInputs({
-        title: null,
-        file: null,
-        path: null,
-      });
-      handleCollapse();
+    if (state.inputs.path) {
+      dispatch({ type: "setItem", payload: { path: state.inputs.path } });
+      toggleCollapse(false);
     }
   };
-
-  const handleCollapse = () => setIsCollapsed(!isCollapsed);
 
   const count = `You have ${state.items.length} image${
     state.items.length > 1 ? "s" : ""
@@ -114,13 +121,13 @@ function App() {
         <div className="container text-center mt-5">
           <button
             className="btn btn-success float-end"
-            onClick={handleCollapse}
+            onClick={() => toggleCollapse(!state.isCollapsed)}
           >
-            {isCollapsed ? "Close Upload Form" : "Add Image"}
+            {state.isCollapsed ? "Close Upload Form" : "Add Image"}
           </button>
           <UploadForm
-            inputs={inputs}
-            isVisible={isCollapsed}
+            inputs={state.inputs}
+            isVisible={state.isCollapsed}
             onChange={handleOnChange}
             onSubmit={handleOnSubmit}
           />
