@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import "./App.css";
 import Navbar from "./components/navbar";
 import Card from "./components/card";
@@ -27,6 +27,11 @@ function App() {
   });
   const [items, setItems] = useState(photos);
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [count, setCount] = useState<string>("");
+
+  useEffect(() => {
+    setCount(`You have ${items.length} image${items.length > 1 ? "s" : ""}`);
+  }, [items]);
 
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.name === "file" && e.target.files && e.target.files[0]) {
@@ -65,7 +70,8 @@ function App() {
             onChange={handleOnChange}
             onSubmit={handleOnSubmit}
           />
-          <h1>Gallery</h1>
+          <h1 className="mb-5">Gallery</h1>
+          <h3>Count: {count}</h3>
           <div className="row mt-5">
             {items.map((photo) => (
               <Card key={photo} src={photo} />
