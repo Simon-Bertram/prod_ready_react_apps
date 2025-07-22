@@ -1,14 +1,25 @@
+import { useMemo } from "react";
+
 interface UploadFormProps {
+  inputs: {
+    title: string | null;
+    file: File | null;
+    path: string | null;
+  };
   isVisible: boolean;
   onChange: React.ChangeEventHandler<HTMLInputElement>;
   onSubmit: React.FormEventHandler<HTMLFormElement>;
 }
 
 export default function UploadForm({
+  inputs,
   isVisible,
   onChange,
   onSubmit,
 }: UploadFormProps) {
+  const isDisabled = useMemo(() => {
+    return !!Object.values(inputs).some((input) => !input);
+  }, [inputs]);
   return (
     isVisible && (
       <>
@@ -33,7 +44,11 @@ export default function UploadForm({
                 onChange={onChange}
               />
             </div>
-            <button type="submit" className="btn btn-success float-end">
+            <button
+              type="submit"
+              className="btn btn-success float-end"
+              disabled={isDisabled}
+            >
               Save changes
             </button>
           </form>

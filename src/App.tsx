@@ -66,6 +66,7 @@ function App() {
             {isCollapsed ? "Hide" : "Add"}
           </button>
           <UploadForm
+            inputs={inputs}
             isVisible={isCollapsed}
             onChange={handleOnChange}
             onSubmit={handleOnSubmit}
