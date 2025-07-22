@@ -40,8 +40,8 @@ function App() {
 
   const handleOnSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (inputs.file) {
-      setItems([inputs.file, ...items]);
+    if (inputs.path) {
+      setItems([inputs.path, ...items]);
     }
   };
 
