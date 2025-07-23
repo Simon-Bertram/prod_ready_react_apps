@@ -1,8 +1,7 @@
-import { useEffect, useReducer } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 import "./App.css";
-import Navbar from "./components/navbar";
 import Card from "./components/card";
-import UploadForm from "./components/upload-form";
+import Layout from "./components/layout";
 
 interface Inputs {
   title: string | null;
@@ -11,8 +10,7 @@ interface Inputs {
 }
 
 interface State {
-  items: string[];
-  count: number;
+  items: { path: string; title: string }[];
   inputs: Inputs;
   isCollapsed: boolean;
 }
@@ -22,6 +20,7 @@ type Action =
       type: "setItem";
       payload: {
         path: string;
+        title: string;
       };
     }
   | {
@@ -37,11 +36,8 @@ type Action =
       };
     };
 
-const photos: string[] = [];
-
 const initialState: State = {
-  items: photos,
-  count: photos.length,
+  items: [],
   inputs: {
     title: null,
     file: null,
@@ -70,7 +66,11 @@ function reducer(state: State, action: Action) {
     case "setItem":
       return {
         ...state,
-        items: [action.payload.path, ...state.items],
+        items: [
+          { path: action.payload.path, title: action.payload.title },
+          ...state.items,
+        ],
+        inputs: { title: null, file: null, path: null },
       };
     case "setInputs":
       return {
@@ -89,58 +89,49 @@ function reducer(state: State, action: Action) {
 
 function App() {
   const [state, dispatch] = useReducer(reducer, initialState);
-  // const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleCollapse = (bool: boolean) =>
     dispatch({ type: "collapse", payload: { bool } });
+
   const handleOnChange = (e: React.ChangeEvent<HTMLInputElement>) =>
     dispatch({ type: "setInputs", payload: { value: e } });
 
   const handleOnSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (state.inputs.path) {
-      dispatch({ type: "setItem", payload: { path: state.inputs.path } });
+    if (state.inputs.path && state.inputs.title) {
+      dispatch({
+        type: "setItem",
+        payload: { path: state.inputs.path, title: state.inputs.title },
+      });
       toggleCollapse(false);
     }
   };
 
-  const count = `You have ${state.items.length} image${
-    state.items.length > 1 ? "s" : ""
-  }`;
+  const count = useMemo(() => {
+    return `You have ${state.items.length} image${
+      state.items.length !== 1 ? "s" : ""
+    }`;
+  }, [state.items]);
 
   useEffect(() => {
     console.log(state);
   }, [state]);
 
   return (
-    <>
-      <header>
-        <Navbar />
-      </header>
-      <main>
-        <div className="container text-center mt-5">
-          <button
-            className="btn btn-success float-end"
-            onClick={() => toggleCollapse(!state.isCollapsed)}
-          >
-            {state.isCollapsed ? "Close Upload Form" : "Add Image"}
-          </button>
-          <UploadForm
-            inputs={state.inputs}
-            isVisible={state.isCollapsed}
-            onChange={handleOnChange}
-            onSubmit={handleOnSubmit}
-          />
-          <h1 className="mb-5">Gallery</h1>
-          <h3>Count: {count}</h3>
-          <div className="row mt-5">
-            {state.items.map((photo, index) => (
-              <Card key={`${photo}-${index}`} src={photo} />
-            ))}
-          </div>
-        </div>
-      </main>
-    </>
+    <Layout
+      state={state}
+      onChange={handleOnChange}
+      onSubmit={handleOnSubmit}
+      toggleCollapse={toggleCollapse}
+    >
+      <h1 className="mb-5 text-center">Gallery</h1>
+      <h3>Count: {count}</h3>
+      <div className="row mt-5">
+        {state.items.map((item, index) => (
+          <Card key={`${item}-${index}`} {...item} title={item.title} />
+        ))}
+      </div>
+    </Layout>
   );
 }
 
